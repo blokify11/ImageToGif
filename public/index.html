@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blokify | Image to GIF</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css?v=20260406-8" />
+  </head>
+  <body>
+    <div id="cursorDot" class="cursor-dot hidden-cursor-dot" aria-hidden="true"></div>
+    <main class="wrap">
+      <section class="hero">
+        <p class="badge">blokify.net/imagetogif</p>
+        <h1>BLOKIFY - <span class="title-white">IMAGE TO GIF</span></h1>
+        <p class="subtitle">
+          Lade Bilder oder Videos per Drag & Drop oder Klick hoch. Wir machen sofort ein GIF daraus.
+        </p>
+      </section>
+
+      <section class="card">
+        <label id="dropzone" class="dropzone" for="fileInput">
+          <input id="fileInput" type="file" accept="image/*,video/*" multiple hidden />
+          <div class="drop-content">
+            <p class="drop-title">Bilder oder Videos hier reinziehen</p>
+            <p class="drop-hint">oder klicken zum Auswählen</p>
+          </div>
+        </label>
+
+        <div id="status" class="status" aria-live="polite"></div>
+
+        <div id="result" class="result hidden">
+          <p class="result-title">Fertig! Klick auf ein GIF, URL kopieren oder direkt herunterladen.</p>
+          <div id="resultsGrid" class="results-grid"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./script.js?v=20260406-8"></script>
+  </body>
+</html>
