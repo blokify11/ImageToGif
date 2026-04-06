@@ -1,4 +1,4 @@
-# Image to GIF für Blokify
+# Image to GIF
 
 Web-App zum Umwandeln von Bildern in GIFs mit Drag-and-Drop-Upload.
 
