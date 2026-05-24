@@ -2,3 +2,4 @@ node_modules/
 gifs/
 .env
 npm-debug.log*
+logs/requests.json

@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin – ImageToGif</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0a; --surface: #111; --surface2: #181818; --surface3: #1e1e1e;
+      --border: #222; --border2: #2e2e2e;
+      --text: #e8e8e8; --muted: #666; --muted2: #999;
+      --accent: #6c47ff; --accent-dim: rgba(108,71,255,.15);
+      --green: #22c55e; --orange: #f59e0b; --blue: #3b82f6;
+      --red: #ef4444; --teal: #14b8a6;
+    }
+    body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; gap: 16px; height: 56px; }
+    .header-logo { font-size: 13px; font-weight: 700; color: var(--muted2); letter-spacing: .05em; text-transform: uppercase; }
+    .header-title { font-size: 15px; font-weight: 700; }
+    .header-sep { color: var(--border2); }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+    .refresh-toggle { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted2); cursor: pointer; user-select: none; }
+    .refresh-toggle input { accent-color: var(--accent); cursor: pointer; }
+    .btn-sm { padding: 6px 14px; font-size: 12px; font-weight: 600; background: var(--surface2); border: 1px solid var(--border2); color: var(--muted2); border-radius: 6px; cursor: pointer; font-family: inherit; transition: all .15s; }
+    .btn-sm:hover { border-color: var(--accent); color: var(--text); }
+    .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 20px 24px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
+    .stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 6px; }
+    .stat-value { font-size: 28px; font-weight: 700; color: var(--text); letter-spacing: -.5px; }
+    .stat-sub { font-size: 12px; color: var(--muted2); margin-top: 2px; }
+    .toolbar { padding: 0 24px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .tabs { display: flex; gap: 4px; }
+    .tab { padding: 7px 16px; font-size: 13px; font-weight: 600; border: 1px solid transparent; border-radius: 7px; cursor: pointer; font-family: inherit; background: transparent; color: var(--muted2); transition: all .15s; }
+    .tab:hover { color: var(--text); border-color: var(--border2); }
+    .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .search-wrap { margin-left: auto; }
+    .search-input { background: var(--surface); border: 1px solid var(--border2); color: var(--text); padding: 7px 14px; font-size: 13px; border-radius: 7px; font-family: inherit; width: 280px; outline: none; transition: border-color .15s; }
+    .search-input:focus { border-color: var(--accent); }
+    .search-input::placeholder { color: var(--muted); }
+    .table-wrap { padding: 0 24px 32px; overflow-x: auto; }
+    .table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .table th { text-align: left; padding: 10px 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
+    .table td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .table tr:hover td { background: var(--surface2); }
+    .type-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+    .type-gif  { background: rgba(20,184,166,.15); color: var(--teal); }
+    .type-api  { background: rgba(245,158,11,.12); color: var(--orange); }
+    .type-page { background: rgba(99,102,241,.12); color: #818cf8; }
+    .type-auth { background: rgba(108,71,255,.15); color: var(--accent); }
+    .ip-link { color: var(--accent); cursor: pointer; text-decoration: none; font-weight: 500; font-family: monospace; border-bottom: 1px dashed rgba(108,71,255,.4); }
+    .ip-link:hover { color: #a78bfa; border-color: #a78bfa; }
+    .detail-btn { padding: 3px 10px; font-size: 11px; font-weight: 600; background: var(--surface3); border: 1px solid var(--border2); color: var(--muted2); border-radius: 5px; cursor: pointer; font-family: inherit; transition: all .15s; white-space: nowrap; }
+    .detail-btn:hover { border-color: var(--accent); color: var(--text); }
+    .detail-btn.has-client { border-color: rgba(34,197,94,.4); color: var(--green); }
+    .detail-btn.has-client:hover { border-color: var(--green); }
+    .ua-cell { color: var(--muted2); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .path-cell { font-family: monospace; font-size: 12px; color: var(--muted2); }
+    .method-get  { color: var(--green); font-weight: 700; }
+    .method-post { color: var(--orange); font-weight: 700; }
+    .ref-cell { color: var(--muted); font-size: 11px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .empty-state { text-align: center; padding: 64px 24px; color: var(--muted2); font-size: 14px; }
+    .empty-state p:first-child { font-size: 32px; margin-bottom: 8px; }
+    .loading { text-align: center; padding: 48px; color: var(--muted2); }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 1000; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border2); border-radius: 14px; width: 100%; box-shadow: 0 24px 64px rgba(0,0,0,.6); overflow: hidden; }
+    .modal-header { display: flex; align-items: flex-start; padding: 20px 24px; border-bottom: 1px solid var(--border); gap: 12px; }
+    .modal-subtitle { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 4px; }
+    .modal-title { font-size: 17px; font-weight: 700; font-family: monospace; color: var(--accent); word-break: break-all; }
+    .modal-close { margin-left: auto; background: var(--surface2); border: 1px solid var(--border2); color: var(--muted2); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all .15s; flex-shrink: 0; }
+    .modal-close:hover { color: var(--text); border-color: var(--muted); }
+    .modal-body { padding: 20px 24px; max-height: 80vh; overflow-y: auto; }
+    .modal-loading { text-align: center; padding: 32px; color: var(--muted2); }
+    #ipModal .modal { max-width: 540px; }
+    .ip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .ip-field { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+    .ip-field-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 4px; }
+    .ip-field-value { font-size: 14px; font-weight: 500; color: var(--text); word-break: break-all; }
+    .ip-field.full { grid-column: span 2; }
+    .flag-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .flag-tag { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+    .flag-tag.yes { background: rgba(239,68,68,.15); color: var(--red); }
+    .flag-tag.no  { background: rgba(34,197,94,.1);  color: var(--green); }
+    .map-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 12px; color: var(--accent); text-decoration: none; padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(108,71,255,.3); }
+    .map-link:hover { background: var(--accent-dim); }
+    #detailModal .modal { max-width: 700px; }
+    .detail-section { margin-bottom: 20px; }
+    .detail-section:last-child { margin-bottom: 0; }
+    .detail-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .detail-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .detail-field { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 10px 12px; }
+    .detail-field-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 3px; }
+    .detail-field-value { font-size: 13px; font-weight: 500; color: var(--text); word-break: break-all; }
+    .detail-field-value.mono { font-family: monospace; font-size: 12px; }
+    .detail-field.full { grid-column: -1/1; }
+    .bool-yes { color: var(--green); }
+    .bool-no  { color: var(--red); }
+    .no-client-hint { background: var(--surface2); border: 1px dashed var(--border2); border-radius: 8px; padding: 16px; text-align: center; font-size: 13px; color: var(--muted2); }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+    @media (max-width: 700px) {
+      .stats-bar { grid-template-columns: 1fr 1fr; }
+      .toolbar { flex-direction: column; align-items: flex-start; }
+      .search-wrap, .search-input { width: 100%; }
+      .ip-grid { grid-template-columns: 1fr; }
+      .ip-field.full { grid-column: span 1; }
+      .detail-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <span class="header-logo">blokify.net</span>
+  <span class="header-sep">/</span>
+  <span class="header-title">ImageToGif Admin</span>
+  <div class="header-right">
+    <label class="refresh-toggle">
+      <input type="checkbox" id="autoRefreshToggle" checked />
+      Auto-Refresh (30s)
+    </label>
+    <button class="btn-sm" onclick="loadLogs()">Neu laden</button>
+  </div>
+</header>
+
+<div class="stats-bar">
+  <div class="stat-card"><div class="stat-label">Gesamt</div><div class="stat-value" id="statTotal">–</div><div class="stat-sub">alle Anfragen</div></div>
+  <div class="stat-card"><div class="stat-label">Heute</div><div class="stat-value" id="statToday">–</div><div class="stat-sub" id="statTodayDate">–</div></div>
+  <div class="stat-card"><div class="stat-label">Unique IPs</div><div class="stat-value" id="statIps">–</div><div class="stat-sub">gesamt</div></div>
+  <div class="stat-card"><div class="stat-label">GIF Downloads</div><div class="stat-value" id="statGifs">–</div><div class="stat-sub">GIF-Zugriffe gesamt</div></div>
+</div>
+
+<div class="toolbar">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab(this,'')">Alle</button>
+    <button class="tab" onclick="switchTab(this,'gif')">GIF Downloads</button>
+    <button class="tab" onclick="switchTab(this,'api')">API</button>
+    <button class="tab" onclick="switchTab(this,'page')">Seiten</button>
+    <button class="tab" onclick="switchAuthTab(this)">OAuth Logs</button>
+    <button class="tab" onclick="switchPm2Tab(this)">PM2</button>
+  </div>
+  <div class="search-wrap">
+    <input class="search-input" type="text" id="searchInput" placeholder="IP, Pfad, User-Agent suchen..." oninput="renderTable()" />
+  </div>
+</div>
+
+<div class="table-wrap">
+  <div id="tableContent"><div class="loading">Lade Daten...</div></div>
+</div>
+
+<!-- IP Lookup Modal -->
+<div class="modal-overlay" id="ipModal" onclick="closeModal('ipModal',event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-subtitle">IP-Geolocation</div><div class="modal-title" id="modalIpTitle">-</div></div>
+      <button class="modal-close" onclick="closeModalDirect('ipModal')">x</button>
+    </div>
+    <div class="modal-body" id="ipModalBody"><div class="modal-loading">Lade...</div></div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detailModal" onclick="closeModal('detailModal',event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-subtitle">Anfrage-Details</div><div class="modal-title" id="detailModalTitle" style="font-size:14px">-</div></div>
+      <button class="modal-close" onclick="closeModalDirect('detailModal')">x</button>
+    </div>
+    <div class="modal-body" id="detailModalBody"><div class="modal-loading">Lade...</div></div>
+  </div>
+</div>
+
+<script>
+  const ADMIN_AUTH_HEADER = null; // Server replaces this line
+
+  const BASE = "/imagetogif/admin/api";
+  const authHeaders = ADMIN_AUTH_HEADER ? { "Authorization": ADMIN_AUTH_HEADER } : {};
+
+  let allLogs = [];
+  let pm2Data = null;
+  let currentType = "";
+  let refreshTimer = null;
+  const logIndex = {};
+  let pm2TabActive = false;
+
+  async function loadLogs() {
+    try {
+      const url = currentType ? BASE+"/logs?type="+currentType : BASE+"/logs";
+      const res = await fetch(url, { headers: authHeaders });
+      if (!res.ok) { window.location.reload(); return; }
+      allLogs = await res.json();
+      allLogs.forEach(l => { logIndex[l.id] = l; });
+      updateStats();
+      renderTable();
+    } catch(e) {
+      document.getElementById("tableContent").innerHTML = '<div class="empty-state"><p>Fehler beim Laden der Logs.</p></div>';
+    }
+  }
+
+  function updateStats() {
+    if (pm2TabActive && pm2Data) {
+      const total = Number(pm2Data.summary?.processCount || 0);
+      const online = Number(pm2Data.summary?.onlineCount || 0);
+      const totalCpu = Number(pm2Data.summary?.totalCpuPercent || 0);
+      const totalMem = Number(pm2Data.summary?.totalMemoryBytes || 0);
+      const hostCores = Number(pm2Data.host?.cpuCores || 1);
+      const cpuOfHost = hostCores > 0 ? (totalCpu / hostCores) : 0;
+      document.getElementById("statTotal").textContent = total.toLocaleString("de");
+      document.getElementById("statToday").textContent = online.toLocaleString("de");
+      document.getElementById("statTodayDate").textContent = "online";
+      document.getElementById("statIps").textContent = totalCpu.toFixed(1).replace(".",",") + "%";
+      document.getElementById("statGifs").textContent = fmtBytes(totalMem);
+      document.querySelector("#statTotal").parentElement.querySelector(".stat-sub").textContent = "PM2 Prozesse";
+      document.querySelector("#statToday").parentElement.querySelector(".stat-sub").textContent = "laufend";
+      document.querySelector("#statIps").parentElement.querySelector(".stat-sub").textContent = "CPU gesamt (PM2)";
+      document.querySelector("#statGifs").parentElement.querySelector(".stat-sub").textContent = "RAM gesamt (PM2)";
+      return;
+    }
+
+    document.querySelector("#statTotal").parentElement.querySelector(".stat-sub").textContent = "alle Anfragen";
+    document.querySelector("#statToday").parentElement.querySelector(".stat-sub").textContent = "";
+    document.querySelector("#statIps").parentElement.querySelector(".stat-sub").textContent = "gesamt";
+    document.querySelector("#statGifs").parentElement.querySelector(".stat-sub").textContent = "GIF-Zugriffe gesamt";
+    fetch(BASE+"/logs", { headers: authHeaders }).then(r=>r.json()).then(all => {
+      all.forEach(l => { logIndex[l.id] = l; });
+      document.getElementById("statTotal").textContent = all.length.toLocaleString("de");
+      const todayStr = new Date().toDateString();
+      document.getElementById("statToday").textContent = all.filter(l=>new Date(l.ts).toDateString()===todayStr).length.toLocaleString("de");
+      document.getElementById("statTodayDate").textContent = new Date().toLocaleDateString("de-DE",{day:"2-digit",month:"long"});
+      document.getElementById("statIps").textContent = new Set(all.map(l=>l.ip)).size.toLocaleString("de");
+      document.getElementById("statGifs").textContent = all.filter(l=>l.type==="gif").length.toLocaleString("de");
+      document.querySelector("#statToday").parentElement.querySelector(".stat-sub").textContent = new Date().toLocaleDateString("de-DE",{day:"2-digit",month:"long"});
+    }).catch(()=>{});
+  }
+
+  async function loadPm2Stats() {
+    try {
+      const res = await fetch(BASE+"/pm2", { headers: authHeaders });
+      if (!res.ok) {
+        const msg = await res.text();
+        throw new Error(msg || "PM2 konnte nicht geladen werden");
+      }
+      pm2Data = await res.json();
+      updateStats();
+      renderPm2Table();
+    } catch (e) {
+      document.getElementById("tableContent").innerHTML = '<div class="empty-state"><p>Fehler beim Laden der PM2-Daten.</p><div style="font-size:12px;color:var(--muted);margin-top:8px;">'+esc(e.message||"Unbekannter Fehler")+'</div></div>';
+    }
+  }
+
+  function renderTable() {
+    const q = document.getElementById("searchInput").value.toLowerCase();
+    const logs = q ? allLogs.filter(l =>
+      (l.ip||"").toLowerCase().includes(q) ||
+      (l.path||"").toLowerCase().includes(q) ||
+      (l.ua||"").toLowerCase().includes(q) ||
+      (l.ref||"").toLowerCase().includes(q) ||
+      (l.lang||"").toLowerCase().includes(q)
+    ) : allLogs;
+
+    if (logs.length === 0) {
+      document.getElementById("tableContent").innerHTML = '<div class="empty-state"><p>Keine Eintrage gefunden.</p></div>';
+      return;
+    }
+
+    const rows = logs.slice(0,500).map(l => {
+      const time = new Date(l.ts).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit"});
+      const typeBadge = '<span class="type-badge type-'+esc(l.type)+'">'+esc(l.type)+'</span>';
+      const mc = l.method==="POST"?"method-post":"method-get";
+      const ipBtn = '<a class="ip-link" onclick="openIpModal(\''+esc(l.ip)+'\')">'+esc(l.ip)+'</a>';
+      const hasClient = !!l.client;
+      let detBtn;
+      if (l.type === 'auth' && l.authEntry) {
+        const ae = l.authEntry;
+        const hasC = !!ae.client || !!l.client;
+        detBtn = '<button class="detail-btn'+(hasC?' has-client':'')+' " onclick="openAuthDetail(\''+esc(JSON.stringify(ae).replace(/'/g,"&apos;"))+'\')">'+( hasC?'Details*':'Details')+'</button>';
+      } else {
+        detBtn = '<button class="detail-btn'+(hasClient?' has-client':'')+' " onclick="openDetailModal(\''+esc(l.id)+'\')">'+( hasClient?'Details*':'Details')+'</button>';
+      }
+      const parsed = parseUA(l.ua||"");
+      const uaDisplay = parsed ? esc(parsed) : ('<span style="color:var(--muted)">'+esc((l.ua||"").substring(0,60))+'</span>');
+      const langShort = l.lang ? esc(l.lang.split(",")[0].split(";")[0]) : "-";
+      const ref = l.ref ? '<span class="ref-cell" title="'+esc(l.ref)+'">'+esc(l.ref.substring(0,50))+'</span>' : '<span style="color:var(--muted)">-</span>';
+      return '<tr><td style="color:var(--muted2);white-space:nowrap;font-size:12px;">'+time+'</td><td>'+typeBadge+'</td><td>'+ipBtn+'</td><td class="'+mc+'">'+esc(l.method)+'</td><td class="path-cell">'+esc(l.path)+'</td><td class="ua-cell" title="'+esc(l.ua||"")+'">'+uaDisplay+'</td><td style="font-size:12px;color:var(--muted2)">'+langShort+'</td><td>'+ref+'</td><td>'+detBtn+'</td></tr>';
+    }).join("");
+
+    const note = logs.length>500 ? '<div style="padding:12px 12px 0;font-size:12px;color:var(--muted2);">Zeige 500 von '+logs.length.toLocaleString("de")+' Eintragen</div>' : "";
+    document.getElementById("tableContent").innerHTML = note + '<table class="table"><thead><tr><th>Zeit</th><th>Typ</th><th>IP</th><th>Method</th><th>Pfad</th><th>Browser/OS</th><th>Sprache</th><th>Referrer</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
+  }
+
+  function parseUA(ua) {
+    if (!ua) return null;
+    let browser = "", os = "";
+    if (/Edg\//.test(ua))          browser = "Edge";
+    else if (/OPR\//.test(ua))     browser = "Opera";
+    else if (/Chrome\//.test(ua))  browser = "Chrome";
+    else if (/Firefox\//.test(ua)) browser = "Firefox";
+    else if (/Safari\//.test(ua))  browser = "Safari";
+    else if (/MSIE|Trident/.test(ua)) browser = "IE";
+    const bv = (ua.match(/(Chrome|Firefox|Version|Edg|OPR)\/([\d]+)/) || [])[2] || "";
+    if (/Windows NT 10/.test(ua))        os = "Windows 10/11";
+    else if (/Windows NT 6\.3/.test(ua)) os = "Windows 8.1";
+    else if (/Windows NT 6\.1/.test(ua)) os = "Windows 7";
+    else if (/Macintosh/.test(ua))       os = "macOS";
+    else if (/Android/.test(ua))         { const m = ua.match(/Android ([\d.]+)/); os = "Android"+(m?" "+m[1]:""); }
+    else if (/iPhone/.test(ua))          os = "iPhone";
+    else if (/iPad/.test(ua))            os = "iPad";
+    else if (/Linux/.test(ua))           os = "Linux";
+    if (!browser && !os) return null;
+    return [browser+(bv?" "+bv:""), os].filter(Boolean).join(" / ");
+  }
+
+  function switchTab(el, type) {
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    el.classList.add("active");
+    pm2TabActive = false;
+    currentType = type;
+    document.getElementById("tableContent").innerHTML = '<div class="loading">Lade...</div>';
+    loadLogs();
+  }
+
+  function renderPm2Table() {
+    const list = Array.isArray(pm2Data?.processes) ? pm2Data.processes : [];
+    const q = (document.getElementById("searchInput").value || "").toLowerCase().trim();
+    const rowsData = q
+      ? list.filter(p =>
+          (p.name || "").toLowerCase().includes(q) ||
+          (p.namespace || "").toLowerCase().includes(q) ||
+          (p.status || "").toLowerCase().includes(q) ||
+          String(p.pmId || "").includes(q) ||
+          String(p.pid || "").includes(q)
+        )
+      : list;
+
+    if (!rowsData.length) {
+      document.getElementById("tableContent").innerHTML = '<div class="empty-state"><p>Keine PM2-Prozesse gefunden.</p></div>';
+      return;
+    }
+
+    const rows = rowsData
+      .sort((a, b) => (b.memoryBytes || 0) - (a.memoryBytes || 0))
+      .map((p) => {
+        const statusClass = p.status === "online" ? "type-gif" : (p.status === "stopped" ? "type-api" : "type-page");
+        const statusBadge = '<span class="type-badge '+statusClass+'">'+esc(p.status || "-")+'</span>';
+        const cpu = Number(p.cpuPercent || 0);
+        const mem = Number(p.memoryBytes || 0);
+        const hostMem = Number(pm2Data?.host?.totalMemBytes || 0);
+        const memPercent = hostMem > 0 ? ((mem / hostMem) * 100) : 0;
+        return '<tr>'+
+          '<td style="font-weight:700">'+esc(p.name || "-")+'</td>'+
+          '<td>'+statusBadge+'</td>'+
+          '<td style="font-family:monospace">'+esc(p.namespace || "-")+'</td>'+
+          '<td style="font-family:monospace">'+esc(p.execMode || "-")+'</td>'+
+          '<td style="font-family:monospace">'+esc(p.pmId)+'</td>'+
+          '<td style="font-family:monospace">'+esc(p.pid || "-")+'</td>'+
+          '<td style="font-weight:600;color:var(--orange)">'+cpu.toFixed(1).replace(".",",")+'%</td>'+
+          '<td style="font-weight:600;color:var(--teal)">'+fmtBytes(mem)+' <span style="color:var(--muted)">('+memPercent.toFixed(2).replace(".",",")+'%)</span></td>'+
+          '<td>'+fmtDuration(p.uptimeMs)+'</td>'+
+          '<td>'+esc(p.restarts || 0)+'</td>'+
+        '</tr>';
+      })
+      .join("");
+
+    const host = pm2Data.host || {};
+    const load = Array.isArray(host.loadAvg) ? host.loadAvg.map(x => Number(x).toFixed(2)).join(" / ") : "-";
+    const hostInfo = '<div style="padding:0 0 10px;color:var(--muted2);font-size:12px;">Host: '+esc(host.cpuCores || "-")+' Kerne, RAM '+fmtBytes(host.totalMemBytes || 0)+', frei '+fmtBytes(host.freeMemBytes || 0)+', Load '+esc(load)+'</div>';
+
+    document.getElementById("tableContent").innerHTML =
+      hostInfo +
+      '<table class="table"><thead><tr><th>Prozess</th><th>Status</th><th>Namespace</th><th>Exec Mode</th><th>PM2 ID</th><th>PID</th><th>CPU %</th><th>RAM</th><th>Uptime</th><th>Restarts</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  }
+
+  async function openIpModal(ip) {
+    document.getElementById("modalIpTitle").textContent = ip;
+    document.getElementById("ipModalBody").innerHTML = '<div class="modal-loading">Lade IP-Daten...</div>';
+    openModalEl("ipModal");
+    try {
+      const res = await fetch(BASE+"/ip-lookup?ip="+encodeURIComponent(ip), { headers: authHeaders });
+      renderIpModal(await res.json());
+    } catch {
+      document.getElementById("ipModalBody").innerHTML = '<div class="modal-loading" style="color:var(--red)">Lookup fehlgeschlagen.</div>';
+    }
+  }
+
+  function renderIpModal(d) {
+    if (d.status==="fail") {
+      document.getElementById("ipModalBody").innerHTML = '<div class="modal-loading" style="color:var(--muted2)">'+esc(d.message||"Keine Daten.")+'</div>';
+      return;
+    }
+    const flag = d.countryCode ? String.fromCodePoint(...[...d.countryCode.toUpperCase()].map(c=>0x1F1E6-65+c.charCodeAt(0))) : "";
+    const flds = [
+      {l:"Land",v:flag+" "+(d.country||"-")},
+      {l:"Stadt",v:(d.city||"-")+(d.zip?" ("+d.zip+")":"")},
+      {l:"Region",v:d.regionName||"-"},
+      {l:"Timezone",v:d.timezone||"-"},
+      {l:"Koordinaten",v:(d.lat&&d.lon)?d.lat+", "+d.lon:"-"},
+      {l:"ISP",v:d.isp||"-",f:true},
+      {l:"Organisation",v:d.org||"-",f:true},
+      {l:"AS",v:d.as||"-",f:true},
+    ].map(x=>'<div class="ip-field'+(x.f?" full":"")+'"><div class="ip-field-label">'+x.l+'</div><div class="ip-field-value">'+esc(x.v)+'</div></div>').join("");
+    const tags = [{l:"Proxy/VPN",v:d.proxy},{l:"Hosting/DC",v:d.hosting},{l:"Mobile",v:d.mobile}]
+      .map(t=>'<span class="flag-tag '+(t.v?"yes":"no")+'">'+(t.v?"ok":"x")+" "+t.l+'</span>').join("");
+    const ml = d.lat&&d.lon ? '<a class="map-link" href="https://www.openstreetmap.org/?mlat='+d.lat+'&mlon='+d.lon+'&zoom=12" target="_blank" rel="noopener">Karte oeffnen ('+d.lat+", "+d.lon+')</a>' : "";
+    document.getElementById("ipModalBody").innerHTML = '<div class="ip-grid">'+flds+'</div><div class="flag-tags">'+tags+'</div>'+ml;
+  }
+
+  function openDetailModal(id) {
+    const l = logIndex[id];
+    if (!l) return;
+    document.getElementById("detailModalTitle").textContent = l.ip+"  -  "+l.method+" "+l.path;
+    document.getElementById("detailModalBody").innerHTML = renderDetail(l);
+    openModalEl("detailModal");
+  }
+
+  function renderDetail(l) {
+    const time = new Date(l.ts).toLocaleString("de-DE",{weekday:"long",day:"2-digit",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit"});
+    const card = (label, val, full, mono) =>
+      '<div class="detail-field'+(full?" full":"")+'"><div class="detail-field-label">'+label+'</div><div class="detail-field-value'+(mono?" mono":"")+'">'+esc(val==null?"-":String(val))+'</div></div>';
+
+    const req = [
+      card("Zeitstempel",time,true),
+      card("Typ",l.type),
+      card("HTTP-Methode",l.method),
+      card("Pfad",l.path,false,true),
+      card("Referrer",l.ref||"-",true,true),
+    ].join("");
+
+    const hdr = [
+      card("User-Agent",l.ua||"-",true,true),
+      card("Sprache (Header)",l.lang||"-",true),
+      card("Accept-Encoding",l.encoding||"-"),
+      card("DNT",l.dnt||"-"),
+      card("sec-ch-ua",l.sec_ua||"-",true,true),
+      card("Plattform (Hint)",l.sec_ua_platform||"-"),
+      card("Mobile (Hint)",l.sec_ua_mobile||"-"),
+      card("Fetch-Site",l.sec_fetch_site||"-"),
+      card("Fetch-Mode",l.sec_fetch_mode||"-"),
+      card("Fetch-Dest",l.sec_fetch_dest||"-"),
+    ].join("");
+
+    let clientHtml = "";
+    if (l.client) {
+      const c = l.client;
+      const bv = v => v===null||v===undefined ? "-" : (v ? '<span class="bool-yes">Ja</span>' : '<span class="bool-no">Nein</span>');
+      clientHtml = `
+        <div class="detail-section">
+          <div class="detail-section-title">Bildschirm &amp; Fenster</div>
+          <div class="detail-grid">
+            ${card("Bildschirm",c.screenW+"x"+c.screenH+" px")}
+            ${card("Fenster",c.innerW+"x"+c.innerH+" px")}
+            ${card("Pixel-Ratio (DPR)",c.dpr)}
+            ${card("Farbtiefe",c.colorDepth+" Bit")}
+          </div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Browser &amp; Betriebssystem</div>
+          <div class="detail-grid">
+            <div class="detail-field full"><div class="detail-field-label">Sprachen (Browser)</div><div class="detail-field-value">`+esc(c.langs||c.lang||"-")+`</div></div>
+            ${card("Plattform",c.platform||"-")}
+            ${card("Vendor",c.vendor||"-")}
+            ${card("Timezone",c.tz||"-")}
+            ${card("CPU-Kerne",c.cores!=null?c.cores:"-")}
+            ${card("RAM",c.memory!=null?c.memory+" GB":"-")}
+          </div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Netzwerk &amp; Features</div>
+          <div class="detail-grid">
+            ${card("Verbindungstyp",c.connection||"-")}
+            ${card("Geschwindigkeit",c.connectionSpeed!=null?c.connectionSpeed+" Mbit/s":"-")}
+            ${card("Do Not Track",c.doNotTrack||"-")}
+            <div class="detail-field"><div class="detail-field-label">Touchscreen</div><div class="detail-field-value">`+bv(c.touch)+(c.maxTouch?' ('+esc(c.maxTouch)+' Punkte)':"")+`</div></div>
+            <div class="detail-field"><div class="detail-field-label">Cookies erlaubt</div><div class="detail-field-value">`+bv(c.cookies)+`</div></div>
+            <div class="detail-field"><div class="detail-field-label">Online</div><div class="detail-field-value">`+bv(c.online)+`</div></div>
+            <div class="detail-field"><div class="detail-field-label">PDF-Plugin</div><div class="detail-field-value">`+bv(c.pdfPlugin)+`</div></div>
+            <div class="detail-field"><div class="detail-field-label">Java</div><div class="detail-field-value">`+bv(c.javaEnabled)+`</div></div>
+          </div>
+        </div>`;
+    } else {
+      clientHtml = `<div class="detail-section"><div class="detail-section-title">Browser-Details</div><div class="no-client-hint">Keine Client-Beacon-Daten vorhanden - nur bei Seitenbesuchen verfugbar.</div></div>`;
+    }
+    return `
+      <div class="detail-section"><div class="detail-section-title">Anfrage</div><div class="detail-grid">${req}</div></div>
+      <div class="detail-section"><div class="detail-section-title">HTTP-Headers</div><div class="detail-grid">${hdr}</div></div>
+      ${clientHtml}`;
+  }
+
+  function openModalEl(id) { document.getElementById(id).classList.add("open"); document.body.style.overflow="hidden"; }
+  function closeModal(id,e) { if(e.target===document.getElementById(id)) closeModalDirect(id); }
+  function closeModalDirect(id) { document.getElementById(id).classList.remove("open"); document.body.style.overflow=""; }
+  document.addEventListener("keydown", e => { if(e.key==="Escape") { closeModalDirect("ipModal"); closeModalDirect("detailModal"); } });
+
+  function esc(s) { return String(s==null?"-":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+  let authTabActive = false;
+  let allAuthLogs = [];
+
+  async function loadAuthLogs() {
+    try {
+      const res = await fetch("/imagetogif/admin/api/auth-logs", { headers: authHeaders });
+      allAuthLogs = await res.json();
+      renderAuthTable();
+    } catch(e) {
+      document.getElementById("tableContent").innerHTML = '<div class="empty-state"><p>Fehler beim Laden.</p></div>';
+    }
+  }
+
+  function renderAuthTable() {
+    if (!allAuthLogs.length) {
+      document.getElementById("tableContent").innerHTML = '<div class="empty-state"><p>Keine OAuth-Logs vorhanden.</p></div>';
+      return;
+    }
+    const rows = allAuthLogs.map(l => {
+      const time = new Date(l.time).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit"});
+      const ipBtn = '<a class="ip-link" onclick="openIpModal(\''+esc(l.ip)+'\')">'+esc(l.ip)+'</a>';
+      const codeBadge = l.code === '✓'
+        ? '<span class="type-badge" style="background:rgba(34,197,94,.15);color:var(--green)">✓ Autorisiert</span>'
+        : '<span class="type-badge" style="background:rgba(239,68,68,.15);color:var(--red)">✗ Abgelehnt</span>';
+      const c = l.client;
+      const browser = c ? esc(parseUA(c.userAgent||"")||c.userAgent||'-') : '<span style="color:var(--muted)">–</span>';
+      const screen = c ? esc(c.screen||'-') : '<span style="color:var(--muted)">–</span>';
+      const platform = c ? esc(c.platform||'-') : '<span style="color:var(--muted)">–</span>';
+      const tz = c ? esc(c.timezone||'-') : '<span style="color:var(--muted)">–</span>';
+      const ae = l.authEntry || l;
+      const discordInfo = ae.discordUsername
+        ? esc((ae.discordGlobalName ? ae.discordGlobalName+' ' : '')+'(@'+ae.discordUsername+') ID: '+ae.discordId)
+        : '<span style="color:var(--muted)">–</span>';
+      const detBtn = c
+        ? '<button class="detail-btn has-client" onclick="openAuthDetail(\''+esc(JSON.stringify(l).replace(/'/g,"&apos;"))+'\')">Details*</button>'
+        : '<button class="detail-btn" onclick="openAuthDetail(\''+esc(JSON.stringify(l).replace(/'/g,"&apos;"))+'\')">Details</button>';
+      return '<tr><td style="color:var(--muted2);white-space:nowrap;font-size:12px;">'+time+'</td><td>'+codeBadge+'</td><td>'+ipBtn+'</td><td style="font-size:12px;">'+discordInfo+'</td><td class="ua-cell">'+browser+'</td><td style="font-size:12px;color:var(--muted2)">'+screen+'</td><td style="font-size:12px;color:var(--muted2)">'+platform+'</td><td style="font-size:12px;color:var(--muted2)">'+tz+'</td><td>'+detBtn+'</td></tr>';
+    }).join("");
+    document.getElementById("tableContent").innerHTML =
+      '<table class="table"><thead><tr><th>Zeit</th><th>Status</th><th>IP</th><th>Discord User</th><th>Browser</th><th>Auflösung</th><th>Plattform</th><th>Timezone</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
+  }
+
+  function openAuthDetail(json) {
+    let l;
+    try { l = JSON.parse(json); } catch { return; }
+    document.getElementById("detailModalTitle").textContent = "OAuth – "+l.ip;
+    const c = l.client;
+    const card = (label, val, full, mono) =>
+      '<div class="detail-field'+(full?' full':'')+'">' +
+      '<div class="detail-field-label">'+label+'</div>' +
+      '<div class="detail-field-value'+(mono?' mono':'')+'">'+esc(val==null?'-':String(val))+'</div></div>';
+    const bv = v => v===null||v===undefined?'-':(v?'<span class="bool-yes">Ja</span>':'<span class="bool-no">Nein</span>');
+    const time = new Date(l.time).toLocaleString("de-DE",{weekday:"long",day:"2-digit",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit"});
+    let html = '<div class="detail-section"><div class="detail-section-title">Anfrage</div><div class="detail-grid">';
+    html += card("Zeitstempel",time,true);
+    html += card("IP",l.ip);
+    html += card("Status",l.code==="✓"?"Autorisiert":"Abgelehnt");
+    html += card("OAuth Code",l.code==="✓"?"✓ Empfangen":"✗ Fehlt");
+    if (l.discordId) {
+      // Profilbild + Banner oben
+      let profileHtml = '<div class="detail-field full" style="padding:0;overflow:hidden;border-radius:10px;">';
+      if (l.discordBanner) {
+        profileHtml += '<div style="position:relative;height:100px;background:url('+esc(l.discordBanner)+') center/cover no-repeat;">';
+      } else if (l.discordAccentColor) {
+        profileHtml += '<div style="position:relative;height:100px;background:'+esc(l.discordAccentColor)+';">';
+      } else {
+        profileHtml += '<div style="position:relative;height:100px;background:#1e1e1e;">';
+      }
+      profileHtml += '<img src="'+esc(l.discordAvatar)+'" style="position:absolute;bottom:-28px;left:16px;width:64px;height:64px;border-radius:50%;border:4px solid var(--surface);">';
+      profileHtml += '</div>';
+      profileHtml += '<div style="padding:36px 16px 14px;display:flex;flex-direction:column;gap:2px;">';
+      profileHtml += '<div style="font-size:16px;font-weight:700;">'+esc(l.discordGlobalName||l.discordUsername||"-")+'</div>';
+      profileHtml += '<div style="font-size:12px;color:var(--muted2);">@'+esc(l.discordUsername||"-")+'</div>';
+      if (l.discordEmail) profileHtml += '<div style="font-size:12px;color:var(--muted2);margin-top:4px;">✉ '+esc(l.discordEmail)+'</div>';
+      if (l.discordPronouns) profileHtml += '<div style="font-size:12px;color:var(--muted2);">'+esc(l.discordPronouns)+'</div>';
+      if (l.discordBio) profileHtml += '<div style="font-size:13px;color:var(--text);margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">'+esc(l.discordBio)+'</div>';
+      profileHtml += '</div></div>';
+      html += profileHtml;
+      html += card("Discord ID",l.discordId,false,true);
+      html += card("Account erstellt",l.discordCreatedAt ? new Date(l.discordCreatedAt).toLocaleString("de-DE") : "-");
+      html += card("Nitro",l.discordNitro ? "✓ Ja" : "✗ Nein");
+      if (l.discordClanTag) html += card("Server-Tag",l.discordClanTag);
+      if (l.discordVerified !== null && l.discordVerified !== undefined) html += card("Verifiziert",l.discordVerified ? "✓ Ja" : "✗ Nein");
+      if (l.discordAccentColor) html += '<div class="detail-field"><div class="detail-field-label">Akzentfarbe</div><div class="detail-field-value"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:'+esc(l.discordAccentColor)+';vertical-align:middle;margin-right:6px;"></span>'+esc(l.discordAccentColor)+'</div></div>';
+    }
+    html += card("User-Agent",l.userAgent||"-",true,true);
+    html += card("Accept-Language",l.acceptLanguage||"-",true);
+    html += '</div></div>';
+    if (c) {
+      html += '<div class="detail-section"><div class="detail-section-title">Browser & Gerät</div><div class="detail-grid">';
+      const parsedBrowser = parseUA(c.userAgent||"");
+      if (parsedBrowser) html += card("Browser (geparst)", parsedBrowser, true);
+      html += card("Bildschirm",c.screen||"-");
+      html += card("Fenster",c.windowSize||"-");
+      html += card("DPR",c.dpr);
+      html += card("Farbtiefe",c.colorDepth?c.colorDepth+" Bit":"-");
+      html += card("Plattform",c.platform||"-");
+      html += card("Vendor",c.vendor||"-");
+      html += card("CPU-Kerne",c.cpuCores);
+      html += card("RAM",c.ram?c.ram+" GB":"-");
+      html += card("Timezone",c.timezone||"-");
+      html += card("Sprachen",c.languages||"-",true);
+      html += card("Connection",c.connectionType||"-");
+      html += card("Downlink",c.downlink?c.downlink+" Mbit/s":"-");
+      html += '<div class="detail-field"><div class="detail-field-label">Cookies</div><div class="detail-field-value">'+bv(c.cookiesEnabled)+'</div></div>';
+      html += '<div class="detail-field"><div class="detail-field-label">Touch</div><div class="detail-field-value">'+bv(c.touchPoints>0)+(c.touchPoints?' ('+esc(c.touchPoints)+')':'')+'</div></div>';
+      html += '<div class="detail-field"><div class="detail-field-label">Online</div><div class="detail-field-value">'+bv(c.online)+'</div></div>';
+      html += card("Do Not Track",c.doNotTrack||"-");
+      html += '</div></div>';
+    } else {
+      html += '<div class="detail-section"><div class="detail-section-title">Browser-Details</div><div class="no-client-hint">Keine Client-Beacon-Daten – Browser hat das Beacon-Script blockiert.</div></div>';
+    }
+    document.getElementById("detailModalBody").innerHTML = html;
+    openModalEl("detailModal");
+  }
+
+  function switchAuthTab(el) {
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    el.classList.add("active");
+    authTabActive = true;
+    pm2TabActive = false;
+    document.getElementById("tableContent").innerHTML = '<div class="loading">Lade OAuth-Logs...</div>';
+    document.getElementById("searchInput").value = "";
+    loadAuthLogs();
+  }
+
+  function switchPm2Tab(el) {
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    el.classList.add("active");
+    authTabActive = false;
+    pm2TabActive = true;
+    currentType = "";
+    document.getElementById("tableContent").innerHTML = '<div class="loading">Lade PM2-Daten...</div>';
+    document.getElementById("searchInput").value = "";
+    loadPm2Stats();
+  }
+
+  const _origSwitchTab = switchTab;
+  switchTab = function(el, type) { authTabActive = false; pm2TabActive = false; _origSwitchTab(el, type); };
+
+  function startRefresh() {
+    clearInterval(refreshTimer);
+    refreshTimer = setInterval(()=>{
+      if(document.getElementById("autoRefreshToggle").checked) {
+        if(pm2TabActive) loadPm2Stats();
+        else if(authTabActive) loadAuthLogs();
+        else loadLogs();
+      }
+    }, 30000);
+  }
+  document.getElementById("autoRefreshToggle").addEventListener("change", startRefresh);
+
+  function fmtBytes(bytes) {
+    const b = Number(bytes || 0);
+    if (!isFinite(b) || b <= 0) return "0 B";
+    const u = ["B","KB","MB","GB","TB"];
+    const i = Math.min(Math.floor(Math.log(b) / Math.log(1024)), u.length - 1);
+    const v = b / Math.pow(1024, i);
+    return (i === 0 ? v.toFixed(0) : v.toFixed(1).replace(".", ",")) + " " + u[i];
+  }
+
+  function fmtDuration(ms) {
+    const n = Number(ms || 0);
+    if (!isFinite(n) || n <= 0) return "-";
+    const s = Math.floor(n / 1000);
+    const d = Math.floor(s / 86400);
+    const h = Math.floor((s % 86400) / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    if (d > 0) return d + "d " + h + "h " + m + "m";
+    if (h > 0) return h + "h " + m + "m";
+    if (m > 0) return m + "m " + sec + "s";
+    return sec + "s";
+  }
+
+  loadLogs();
+  startRefresh();
+</script>
+</body>
+</html>
